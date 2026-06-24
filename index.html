@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인터뷰 비교 사이트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.1.0/diff.min.js"></script>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            padding: 30px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h2 { text-align: center; margin-bottom: 30px; }
+        .container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .input-box { flex: 1; }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .btn-container { text-align: center; margin: 20px 0; }
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 6px;
+        }
+        button:hover { background-color: #0056b3; }
+        button.secondary { background-color: #28a745; }
+        button.secondary:hover { background-color: #1e7e34; }
+        #result-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            min-height: 150px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 16px;
+        }
+        /* 추가된 부분은 초록색 배경, 삭제된 부분은 빨간색 배경에 취소선 */
+        .added { background-color: #d4fcbc; font-weight: bold; padding: 2px 4px; border-radius: 3px; }
+        .removed { background-color: #fbb6c2; text-decoration: line-through; color: #555; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <h2>📝 인터뷰 수정 내역 비교기</h2>
+
+    <div class="container">
+        <div class="input-box">
+            <h3>수정 전 원본</h3>
+            <textarea id="oldText" placeholder="수정 전 인터뷰 텍스트를 여기에 붙여넣으세요..."></textarea>
+        </div>
+        <div class="input-box">
+            <h3>수정 후 최종본</h3>
+            <textarea id="newText" placeholder="수정 후 인터뷰 텍스트를 여기에 붙여넣으세요..."></textarea>
+        </div>
+    </div>
+
+    <div class="btn-container">
+        <button onclick="compareText()">비교하기</button>
+        <button class="secondary" onclick="downloadResult()">📥 비교 결과 다운로드</button>
+    </div>
+
+    <h3>🔍 비교 결과</h3>
+    <div id="result-box">텍스트를 입력하고 '비교하기' 버튼을 누르면, 추가되거나 삭제된 부분이 여기에 표시됩니다.</div>
+
+    <script>
+        let hasResult = false;
+
+        function compareText() {
+            const oldText = document.getElementById('oldText').value;
+            const newText = document.getElementById('newText').value;
+
+            // 단어 단위로 차이점 분석
+            const diff = Diff.diffWords(oldText, newText);
+            const resultBox = document.getElementById('result-box');
+
+            // 기존 결과 초기화
+            resultBox.innerHTML = '';
+
+            // 분석된 결과를 화면에 색상과 함께 출력
+            diff.forEach((part) => {
+                const span = document.createElement('span');
+                span.textContent = part.value;
+                if (part.added) {
+                    span.className = 'added';
+                } else if (part.removed) {
+                    span.className = 'removed';
+                }
+                resultBox.appendChild(span);
+            });
+
+            hasResult = true;
+        }
+
+        function getTimestamp() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        }
+
+        function downloadResult() {
+            if (!hasResult) {
+                alert('먼저 "비교하기" 버튼을 눌러 비교를 실행해주세요.');
+                return;
+            }
+
+            const resultBox = document.getElementById('result-box');
+            const timestamp = getTimestamp();
+            const displayTime = new Date().toLocaleString('ko-KR');
+
+            const htmlContent = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>인터뷰 비교 결과</title>
+<style>
+  body { font-family: 'Malgun Gothic', sans-serif; padding: 30px; background-color: #f9f9f9; color: #333; }
+  h2 { margin-bottom: 5px; }
+  .meta { color: #888; font-size: 14px; margin-bottom: 25px; }
+  .legend { margin-bottom: 20px; font-size: 14px; }
+  .legend span { padding: 2px 8px; border-radius: 3px; margin-right: 10px; }
+  #result-box { background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #ddd; white-space: pre-wrap; line-height: 1.8; font-size: 16px; }
+  .added { background-color: #d4fcbc; font-weight: bold; padding: 2px 4px; border-radius: 3px; }
+  .removed { background-color: #fbb6c2; text-decoration: line-through; color: #555; padding: 2px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h2>🔍 인터뷰 비교 결과</h2>
+<div class="meta">생성 시각: ${displayTime}</div>
+<div class="legend"><span class="added">추가된 내용</span><span class="removed">삭제된 내용</span></div>
+<div id="result-box">${resultBox.innerHTML}</div>
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `비교결과_${timestamp}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
